@@ -6,7 +6,7 @@ class Program
 
     static async Task Main()
     {
-        string logsFolder = "Logs"; // Replace with your actual folder path
+        string logsFolder = "Logs";
         string[] logFiles = Directory.GetFiles(logsFolder, "*.log");
         string targetColumnName = "c-ip";
 
@@ -27,10 +27,6 @@ class Program
 
             Console.WriteLine(); // Add a separator between log files
         }
-
-
-        // Output the results to the console
-
     }
 
     static async Task<Dictionary<string, int>> AnalyzeLogFileAsync(string filePath, string targetColumnName)
@@ -49,7 +45,7 @@ class Program
                     // Check if the line contains the header information
                     if (line.StartsWith("#Fields"))
                     {
-                        // Extract column names from the header excluding the first element
+                        // Extract column names from the header excluding the first element and all empty elements
                         string[] columnNames = line.Split().Skip(1).Where(x => !string.IsNullOrEmpty(x)).ToArray();
 
                         // Find the index of the target column dynamically
@@ -70,19 +66,20 @@ class Program
                     {
                         string targetColumnValue = columns[targetColumnIndex];
 
+                        // Check if the  targetColumnValue is not empty and IP address is valid
                         if (!string.IsNullOrEmpty(targetColumnValue) && IsValidIpAddress(targetColumnValue))
                         {
                             if (ipHits.ContainsKey(targetColumnValue))
                             {
+                                // Increasing the number of repetitions
                                 ipHits[targetColumnValue]++;
                             }
                             else
                             {
+                                // First appearance
                                 ipHits[targetColumnValue] = 1;
                             }
-                        }                       
-
-
+                        }
                     }                    
                 }
             }
@@ -100,24 +97,24 @@ class Program
         // TryParse checks if the provided string is a valid IP address
         if (IPAddress.TryParse(ipAddressString, out IPAddress ipAddress))
         {
-            // Check for specific IP address formats or restrictions if needed
             return true;
         }
-
         return false;
     }
 
     static async Task<string> ResolveHostNameAsync(string ipAddress)
     {
+        
         if (hostnameCache.TryGetValue(ipAddress, out string cachedHostName))
         {
+            // Retrieving from cache if IP address already exists
             return cachedHostName;
         }
 
         try
         {
             var getHostEntryTask = Dns.GetHostEntryAsync(ipAddress);
-            var timeoutTask = Task.Delay(100); // 500 milliseconds timeout
+            var timeoutTask = Task.Delay(100); // 100 milliseconds timeout
 
             // Wait for either the DNS lookup task or the timeout task to complete
             var completedTask = await Task.WhenAny(getHostEntryTask, timeoutTask);
